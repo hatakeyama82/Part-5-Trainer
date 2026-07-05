@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1a1a2e">
+<title>Part 5 Trainer</title>
+<style>
+  :root{
+    --bg:#f4f5f7; --card:#ffffff; --ink:#1e2330; --sub:#6b7280;
+    --accent:#3556c7; --accent-ink:#ffffff;
+    --ok:#15803d; --ok-bg:#dcfce7; --ng:#b91c1c; --ng-bg:#fee2e2;
+    --line:#e5e7eb; --chip:#eef1f8;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  body{margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Noto Sans JP",sans-serif; background:var(--bg); color:var(--ink);}
+  .wrap{max-width:560px; margin:0 auto; padding:14px 14px 90px;}
+  header{display:flex; justify-content:space-between; align-items:center; padding:6px 2px 12px;}
+  header h1{font-size:17px; margin:0; letter-spacing:.02em;}
+  header .streak{font-size:12px; color:var(--sub);}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px; margin-bottom:12px; box-shadow:0 1px 2px rgba(20,25,40,.04);}
+  .home-btn{display:block; width:100%; text-align:left; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:10px; font-size:15px; font-weight:600; color:var(--ink); cursor:pointer;}
+  .home-btn small{display:block; font-weight:400; color:var(--sub); font-size:12px; margin-top:4px;}
+  .home-btn .num{float:right; font-size:13px; color:var(--accent); font-weight:700;}
+  .home-btn:active{background:#f0f2f8;}
+  .home-btn.primary{background:var(--accent); color:var(--accent-ink); border-color:var(--accent);}
+  .home-btn.primary small{color:#cdd8ff;}
+  .home-btn.primary .num{color:#fff;}
+  .home-btn:disabled{opacity:.45; cursor:default;}
+  .qmeta{display:flex; justify-content:space-between; align-items:center; font-size:12px; color:var(--sub); margin-bottom:10px;}
+  .chip{background:var(--chip); color:var(--accent); border-radius:99px; padding:2px 10px; font-size:11px; font-weight:600;}
+  .sentence{font-size:16.5px; line-height:1.75; margin:4px 0 16px; word-break:normal; overflow-wrap:anywhere;}
+  .blank{font-weight:700; color:var(--accent); letter-spacing:.05em;}
+  .choice{display:flex; align-items:flex-start; gap:10px; width:100%; text-align:left; background:var(--card); border:1.5px solid var(--line); border-radius:12px; padding:13px 14px; margin-bottom:9px; font-size:15px; color:var(--ink); cursor:pointer; transition:border-color .1s;}
+  .choice .abc{font-weight:700; color:var(--sub); min-width:18px;}
+  .choice:active{border-color:var(--accent);}
+  .choice.correct{background:var(--ok-bg); border-color:var(--ok); }
+  .choice.correct .abc{color:var(--ok);}
+  .choice.wrong{background:var(--ng-bg); border-color:var(--ng);}
+  .choice.wrong .abc{color:var(--ng);}
+  .choice.dim{opacity:.5;}
+  .exp{background:#f8f9fc; border:1px solid var(--line); border-radius:12px; padding:14px; font-size:13.5px; line-height:1.7; margin-top:4px; color:#374151;}
+  .exp b{color:var(--ink);}
+  .verdict{font-size:15px; font-weight:700; margin:2px 0 8px;}
+  .verdict.ok{color:var(--ok);} .verdict.ng{color:var(--ng);}
+  .bottom{position:fixed; left:0; right:0; bottom:0; background:linear-gradient(transparent, var(--bg) 30%); padding:10px 14px 18px;}
+  .bottom-inner{max-width:560px; margin:0 auto; display:flex; gap:10px;}
+  .btn{flex:1; padding:15px; border-radius:13px; border:none; font-size:15px; font-weight:700; cursor:pointer;}
+  .btn.primary{background:var(--accent); color:#fff;}
+  .btn.ghost{background:var(--card); color:var(--ink); border:1px solid var(--line);}
+  .progressbar{height:5px; background:var(--line); border-radius:99px; overflow:hidden; margin-bottom:14px;}
+  .progressbar>div{height:100%; background:var(--accent); border-radius:99px; transition:width .25s;}
+  .stat-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .stat{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px; text-align:center;}
+  .stat .v{font-size:24px; font-weight:800; color:var(--accent);}
+  .stat .l{font-size:11.5px; color:var(--sub); margin-top:2px;}
+  .cat-row{display:flex; justify-content:space-between; font-size:13px; padding:9px 2px; border-bottom:1px solid var(--line);}
+  .cat-row:last-child{border-bottom:none;}
+  .cat-row .r{color:var(--sub);}
+  .result-big{text-align:center; padding:26px 16px;}
+  .result-big .score{font-size:44px; font-weight:800; color:var(--accent);}
+  .result-big .sub{color:var(--sub); font-size:13px; margin-top:6px;}
+  .back{background:none; border:none; color:var(--accent); font-size:14px; font-weight:600; padding:4px 0 12px; cursor:pointer;}
+  .danger{color:var(--ng); font-size:12.5px; text-align:center; margin-top:22px; background:none; border:none; width:100%; cursor:pointer;}
+  .note{font-size:12px; color:var(--sub); text-align:center; margin-top:14px; line-height:1.6;}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div class="bottom" id="bottom" style="display:none"></div>
+
+<script src="questions.js"></script>
+<script>
+// ===== state =====
+const LS_KEY = "p5_history_v1";
+// history: { [id]: {w: 誤答数, c: 連続正解数, seen: 出題数, last: ts} }
+let hist = load();
+let session = null; // {ids:[], idx, correct, wrongIds:[], mode, answered, picked}
+
+function load(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)) || {}; }catch(e){ return {}; } }
+function save(){ localStorage.setItem(LS_KEY, JSON.stringify(hist)); }
+
+const $app = document.getElementById("app");
+const $bottom = document.getElementById("bottom");
+
+function wrongPool(){
+  // 間違えたことがあり、まだ「卒業」(復習で2連続正解)していない問題
+  return QUESTIONS.filter(q => { const h = hist[q.id]; return h && h.w > 0 && h.c < 2; });
+}
+function unseenPool(){ return QUESTIONS.filter(q => !hist[q.id]); }
+
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+// ===== screens =====
+function home(){
+  session = null; $bottom.style.display="none";
+  const wp = wrongPool().length, us = unseenPool().length;
+  const total = QUESTIONS.length;
+  const seen = total - us;
+  $app.innerHTML = `
+    <header><h1>TOEIC® Part 5 Trainer</h1><span class="streak">${total}問収録</span></header>
+    <button class="home-btn primary" onclick="startNew()">
+      新しい問題に挑戦 <span class="num">残り ${us} 問</span>
+      <small>未出題からランダムに10問</small>
+    </button>
+    <button class="home-btn" onclick="startWrong()" ${wp===0?"disabled":""}>
+      間違いだけ復習 <span class="num">${wp} 問</span>
+      <small>2連続正解で卒業。間違えるとカウントし直し</small>
+    </button>
+    <button class="home-btn" onclick="startAll()">
+      全問からランダム <span class="num"></span>
+      <small>出題済み含む全問から10問</small>
+    </button>
+    <button class="home-btn" onclick="stats()">
+      成績を見る <span class="num">${seen}/${total} 済</span>
+      <small>正答率・ジャンル別の弱点</small>
+    </button>
+    <p class="note">履歴はこの端末のブラウザ内に保存されます。<br>ホーム画面に追加するとアプリのように使えます。</p>
+  `;
+}
+
+function startNew(){ const p = unseenPool(); begin(p.length? p : QUESTIONS, "new"); }
+function startAll(){ begin(QUESTIONS, "all"); }
+function startWrong(){ const p = wrongPool(); if(p.length) begin(p, "wrong"); }
+
+function begin(pool, mode){
+  const n = Math.min(pool.length, 10);
+  session = { ids: shuffle(pool).slice(0,n).map(q=>q.id), idx:0, correct:0, wrongIds:[], mode, answered:false, picked:-1 };
+  question();
+}
+
+function qById(id){ return QUESTIONS.find(q=>q.id===id); }
+
+function question(){
+  const s = session;
+  const q = qById(s.ids[s.idx]);
+  s.answered = false; s.picked = -1;
+  const pct = Math.round(100 * s.idx / s.ids.length);
+  $bottom.style.display="none";
+  $app.innerHTML = `
+    <button class="back" onclick="confirmQuit()">‹ やめる</button>
+    <div class="progressbar"><div style="width:${pct}%"></div></div>
+    <div class="card">
+      <div class="qmeta"><span class="chip">${q.cat}</span><span>${s.idx+1} / ${s.ids.length}</span></div>
+      <p class="sentence">${esc(q.q).replace(/_{3,}/, '<span class="blank">______</span>')}</p>
+      <div id="choices">
+        ${q.c.map((c,i)=>`<button class="choice" id="ch${i}" onclick="answer(${i})"><span class="abc">${"ABCD"[i]}</span><span>${esc(c)}</span></button>`).join("")}
+      </div>
+      <div id="feedback"></div>
+    </div>
+  `;
+  window.scrollTo(0,0);
+}
+
+function answer(i){
+  const s = session;
+  if(s.answered) return;
+  s.answered = true; s.picked = i;
+  const q = qById(s.ids[s.idx]);
+  const ok = i === q.a;
+
+  // record
+  const h = hist[q.id] || {w:0,c:0,seen:0,last:0};
+  h.seen++; h.last = Date.now();
+  if(ok){ h.c++; s.correct++; }
+  else { h.w++; h.c = 0; s.wrongIds.push(q.id); }
+  hist[q.id] = h; save();
+
+  for(let k=0;k<4;k++){
+    const el = document.getElementById("ch"+k);
+    el.onclick = null;
+    if(k===q.a) el.classList.add("correct");
+    else if(k===i) el.classList.add("wrong");
+    else el.classList.add("dim");
+  }
+  document.getElementById("feedback").innerHTML = `
+    <p class="verdict ${ok?"ok":"ng"}">${ok?"正解!":"不正解"}${ok?"":" — 正解は ("+"ABCD"[q.a]+") "+esc(q.c[q.a])}</p>
+    <div class="exp"><b>解説</b><br>${esc(q.exp)}</div>
+  `;
+  $bottom.style.display="block";
+  $bottom.innerHTML = `<div class="bottom-inner"><button class="btn primary" onclick="next()">${session.idx+1>=session.ids.length?"結果を見る":"次の問題 ›"}</button></div>`;
+}
+
+function next(){
+  session.idx++;
+  if(session.idx >= session.ids.length) result();
+  else question();
+}
+
+function result(){
+  const s = session;
+  $bottom.style.display="none";
+  const pct = Math.round(100*s.correct/s.ids.length);
+  const wp = wrongPool().length;
+  $app.innerHTML = `
+    <header><h1>結果</h1></header>
+    <div class="card result-big">
+      <div class="score">${s.correct} / ${s.ids.length}</div>
+      <div class="sub">正答率 ${pct}%${s.wrongIds.length?` ・ ${s.wrongIds.length}問を復習リストに追加`:""}</div>
+    </div>
+    ${s.wrongIds.length? `<div class="card"><b style="font-size:14px">今回間違えた問題</b>${s.wrongIds.map(id=>{const q=qById(id);return `<div class="cat-row"><span style="max-width:75%">${esc(q.q.slice(0,42))}…</span><span class="r">${q.cat}</span></div>`}).join("")}</div>`:""}
+    <button class="home-btn primary" onclick="startWrong()" ${wp===0?"disabled":""}>間違いだけ復習する <span class="num">${wp} 問</span></button>
+    <button class="home-btn" onclick="startNew()">続けて新しい問題</button>
+    <button class="home-btn" onclick="home()">ホームへ</button>
+  `;
+  session = null;
+}
+
+function stats(){
+  $bottom.style.display="none";
+  const total = QUESTIONS.length;
+  let seen=0, allSeen=0, allW=0;
+  const cats = {};
+  QUESTIONS.forEach(q=>{
+    const h = hist[q.id];
+    if(!cats[q.cat]) cats[q.cat] = {seen:0,w:0,n:0};
+    cats[q.cat].n++;
+    if(h){ seen++; allSeen += h.seen; allW += h.w; cats[q.cat].seen += h.seen; cats[q.cat].w += h.w; }
+  });
+  const acc = allSeen? Math.round(100*(allSeen-allW)/allSeen) : 0;
+  $app.innerHTML = `
+    <button class="back" onclick="home()">‹ ホーム</button>
+    <header><h1>成績</h1></header>
+    <div class="stat-grid">
+      <div class="stat"><div class="v">${seen}/${total}</div><div class="l">挑戦した問題</div></div>
+      <div class="stat"><div class="v">${acc}%</div><div class="l">通算正答率</div></div>
+      <div class="stat"><div class="v">${wrongPool().length}</div><div class="l">復習リスト</div></div>
+      <div class="stat"><div class="v">${allSeen}</div><div class="l">総回答数</div></div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <b style="font-size:14px">ジャンル別正答率</b>
+      ${Object.entries(cats).map(([c,v])=>{
+        const a = v.seen? Math.round(100*(v.seen-v.w)/v.seen) : null;
+        return `<div class="cat-row"><span>${c} <span class="r">(${v.n}問)</span></span><span class="r">${a===null?"未挑戦":a+"%"}</span></div>`;
+      }).join("")}
+    </div>
+    <button class="danger" onclick="resetAll()">履歴をすべてリセット</button>
+  `;
+}
+
+function resetAll(){
+  if(confirm("全履歴を削除します。よろしいですか?")){ hist = {}; save(); home(); }
+}
+function confirmQuit(){
+  if(!session || (session.idx===0 && !session.answered)){ home(); return; }
+  if(confirm("セッションを中断してホームに戻りますか?(回答済みの記録は保存されます)")) home();
+}
+
+home();
+</script>
+</body>
+</html>
